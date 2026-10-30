@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Plant Disease Detector | Deep Learning</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+            margin: 0;
+        }
+        h1 { color: #4ade80; margin-bottom: 5px; }
+        p { color: #94a3b8; margin-top: 0; margin-bottom: 30px; }
+        .card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 30px;
+            width: 420px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        .upload-area {
+            border: 2px dashed #4ade80;
+            padding: 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            background: #0f172a;
+        }
+        .upload-area:hover { background: #1a2e3b; }
+        input[type="file"] { display: none; }
+        .preview-img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            display: none;
+            margin: 15px auto;
+        }
+        .btn {
+            background-color: #16a34a;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn:hover { background-color: #15803d; }
+        .result-box {
+            margin-top: 25px;
+            padding: 15px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            display: none;
+        }
+        .disease-title { font-size: 20px; font-weight: bold; color: #f87171; }
+        .healthy-title { font-size: 20px; font-weight: bold; color: #4ade80; }
+    </style>
+</head>
+<body>
+
+    <h1>🌿 AI Plant Disease Detector</h1>
+    <p>Upload a leaf photo to get instant disease diagnosis & confidence score</p>
+
+    <div class="card">
+        <form id="upload-form">
+            <div class="upload-area" onclick="document.getElementById('file-input').click()">
+                <div id="upload-text">📸 Click to select Leaf Photo</div>
+                <img id="preview" class="preview-img" alt="Leaf Preview">
+            </div>
+            <input type="file" id="file-input" accept="image/*" onchange="previewImage(event)">
+            <button type="button" class="btn" onclick="uploadAndPredict()">Analyze Leaf Photo</button>
+        </form>
+
+        <div class="result-box" id="result-box">
+            <small style="color: #64748b;">DIAGNOSIS RESULT</small>
+            <div id="diagnosis-text" class="disease-title">-</div>
+            <div style="color: #94a3b8; margin-top: 5px;" id="confidence-text">Confidence: --%</div>
+        </div>
+    </div>
+
+    <script>
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                const preview = document.getElementById('preview');
+                preview.src = reader.result;
+                preview.style.display = 'block';
+                document.getElementById('upload-text').style.display = 'none';
+            }
+            if(event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
+        }
+
+        async function uploadAndPredict() {
+            const fileInput = document.getElementById('file-input');
+            if (!fileInput.files[0]) {
+                alert("Please select a leaf photo first!");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                const resultBox = document.getElementById('result-box');
+                const diagnosisText = document.getElementById('diagnosis-text');
+                const confidenceText = document.getElementById('confidence-text');
+
+                resultBox.style.display = 'block';
+                diagnosisText.innerText = data.prediction;
+                diagnosisText.className = data.status === "Healthy" ? "healthy-title" : "disease-title";
+                confidenceText.innerText = `Confidence: ${data.confidence}`;
+            } catch (err) {
+                console.error("Analysis Error:", err);
+            }
+        }
+    </script>
+</body>
+</html>
